@@ -1,21 +1,25 @@
-from dataclasses import asdict, dataclass
+from enum import StrEnum, auto
 import math
-from typing import SupportsFloat
+from typing import NamedTuple, SupportsFloat, SupportsIndex
 
 from services.parser import DocumentInfo, Margin
 
 
-@dataclass
-class Issue:
-    rule_id: str
-    category: str
-    message: str
-    severity: str = "error"
-    paragraph_index: int | None = None
-    standard: str = ""
+class IssueCategory(StrEnum):
+    DOCUMENT = auto()
 
-    def to_dict(self) -> dict:
-        return asdict(self)
+
+class IssueSeverity(StrEnum):
+    ERROR = auto()
+
+
+class Issue(NamedTuple):
+    rule_id: str
+    category: IssueCategory
+    message: str
+    standard: str
+    severity: IssueSeverity = IssueSeverity.ERROR
+    paragraph_index: SupportsIndex | None = None
 
 
 # --- константы ГОСТ
@@ -41,6 +45,7 @@ MUPO_MARGIN_MM=Margin(
     bottom=20,
 )
 
+
 # --- функции проверки
 # --- оформления документа
 def check_margins(parsed: DocumentInfo, standard: str) -> list[Issue]:
@@ -56,16 +61,19 @@ def check_margins(parsed: DocumentInfo, standard: str) -> list[Issue]:
                 continue
 
             if not math.isclose(actual, expected, rel_tol=0.0, abs_tol=1.0):
+                category = IssueCategory.DOCUMENT
                 issues.append(Issue(
-                    rule_id=f"document.margins.{name}",
-                    category="document",
+                    rule_id=f"{category}.margins.{name}",
+                    category=category,
                     message=(
                         f"Поле {name} = {actual:.0f} мм, "
                         f"ожидается {expected} мм"
                     ),
+                    standard=standard,
                 ))
 
     return issues
+
 
 # --- финал
 def _iter_runs(parsed: DocumentInfo):
@@ -73,6 +81,7 @@ def _iter_runs(parsed: DocumentInfo):
         for run in para.runs:
             if run.text.strip():
                 yield para, run
+
 
 RULES = [
     check_margins,
