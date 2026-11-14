@@ -22,7 +22,7 @@ async def upload(
 
     file_bytes = await file.read()
     if len(file_bytes) > MAX_SIZE:
-        raise HTTPException(413, "Файл слишком большой");
+        raise HTTPException(413, "Файл слишком большой")
 
     try:
         parsed_data = await run_in_threadpool(
