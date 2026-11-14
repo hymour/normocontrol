@@ -16,7 +16,7 @@ router = APIRouter()
 @router.post("/api/upload")
 async def upload(
     file: UploadFile = File(...), 
-    standard: str = Form("GOST_732"),
+    standard: str = Form("GOST_7_32"),
 ):
     if not file.filename or not file.filename.lower().endswith(".docx"):
         raise HTTPException(400, "Поддерживается только формат .docx!")

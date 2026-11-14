@@ -6,9 +6,9 @@ from services.parser import DocumentInfo, Margin
 
 
 # for `StrEnum`'s, auto-generated values are lowercased names,
-# e.g. `GOST_732 = auto()` <=> `GOST_732 = "gost_732"`
+# e.g. `GOST_7_32 = auto()` <=> `GOST_7_32 = "gost_7_32"`
 class Standard(StrEnum):
-    GOST_732 = auto()
+    GOST_7_32 = auto()
     MU_PO = auto()
 
 
@@ -59,7 +59,7 @@ def check_margins(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
     issues: list[Issue] = []
 
     match standard:
-        case Standard.GOST_732:
+        case Standard.GOST_7_32:
             margin = GOST_MARGIN_MM
         case Standard.MU_PO:
             margin = MUPO_MARGIN_MM
