@@ -1,12 +1,13 @@
 from collections import Counter
 import logging
 
+from services.parser import DocumentInfo
 from services.rules import Issue, RULES
 
 logger = logging.getLogger(__name__)
 
 
-def check_document(parsed: dict, standard: str) -> list[dict]:
+def check_document(parsed: DocumentInfo, standard: str) -> list[dict]:
     all_issues: list[Issue] = []
     for rule_func in RULES:
         try:
