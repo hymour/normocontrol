@@ -1,5 +1,6 @@
-import logging
 from collections import Counter
+import logging
+
 from services.rules import Issue, RULES
 
 logger = logging.getLogger(__name__)

@@ -1,11 +1,12 @@
 import uuid
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
 from services.checker import check_document
-from services.store import Session, save
-from services.parser import parse_docx_file
 from services.comment import add_comments
+from services.parser import parse_docx_file
+from services.store import Session, save
 
 MAX_SIZE = 20*1024*1024
 router = APIRouter()

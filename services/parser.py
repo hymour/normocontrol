@@ -1,9 +1,10 @@
+from io import BytesIO
+
 from docx import Document
-import io
 
 def parse_docx_file(file_bytes: bytes, filename: str) -> dict:
     try:
-        doc = Document(io.BytesIO(file_bytes))
+        doc = Document(BytesIO(file_bytes))
     except Exception as e:
         raise ValueError(f"Не удалось открыть файл") from e
 
