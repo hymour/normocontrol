@@ -9,6 +9,7 @@ from services.parser import parse_docx_file
 from services.rules import Standard
 from services.store import Session, save
 
+
 MAX_SIZE = 20*1024*1024
 router = APIRouter()
 
@@ -21,7 +22,10 @@ async def upload(
     if not file.filename or not file.filename.lower().endswith(".docx"):
         raise HTTPException(400, "Поддерживается только формат .docx!")
 
-    standard = Standard(standard.lower())
+    try:
+        standard = Standard(standard.lower())
+    except ValueError:
+        raise HTTPException(400, "Указан неизвестный стандарт")
 
     file_bytes = await file.read()
     if len(file_bytes) > MAX_SIZE:
