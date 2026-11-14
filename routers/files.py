@@ -4,6 +4,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from services.checker import check_document
 from services.store import Session, save
+from services.parser import parse_docx_file
 from services.comment import add_comments
 
 MAX_SIZE = 20*1024*1024
@@ -21,7 +22,12 @@ async def upload(
     if len(file_bytes) > MAX_SIZE:
         raise HTTPException(413, "Файл слишком большой");
 
-    errors = await run_in_threadpool(check_document, file_bytes, standard)
+    try:
+        parsed_data = await run_in_threadpool(parse_docx_file, file_bytes, file.filename)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+    errors = await run_in_threadpool(check_document, parsed_data, standard)
 
     result_bytes = None
     if errors:

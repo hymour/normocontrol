@@ -21,7 +21,7 @@ def parse_docx_file(file_bytes: bytes, filename: str) -> dict:
                 {
                     "text": r.text,
                     "font_name": r.font.name,
-                    "font_size_pt": r.font_size.pt if r.font_size else None,
+                    "font_size_pt": r.font.size.pt if r.font.size else None,
                     "bold": r.font.bold,
                     "italic": r.font.italic,
                     "underline": r.font.underline,
