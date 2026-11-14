@@ -2,6 +2,9 @@ from io import BytesIO
 from typing import NamedTuple, SupportsFloat, SupportsIndex
 
 from docx import Document
+from docx.section import Section
+from docx.text.paragraph import Paragraph
+from docx.text.run import Run
 
 
 class DocumentInfo(NamedTuple):
@@ -44,6 +47,41 @@ class Margin(NamedTuple):
     bottom: SupportsFloat | None  # mm
 
 
+def _get_paragraph_info(i: SupportsIndex, p: Paragraph) -> ParagraphInfo:
+    pf = p.paragraph_format
+    return ParagraphInfo(
+        index_=i,
+        text=p.text,
+        style=p.style.name if p.style else None,
+        alignment=str(p.alignment) if p.alignment is not None else None,
+        first_line_indent=(
+            pf.first_line_indent.cm if pf.first_line_indent else None
+        ),
+        line_spacing=pf.line_spacing,
+        runs=[_get_run_info(r) for r in p.runs],
+    )
+
+
+def _get_run_info(r: Run) -> RunInfo:
+    return RunInfo(
+        text=r.text,
+        font_name=r.font.name,
+        font_size=r.font.size.pt if r.font.size else None,
+        is_bold=r.font.bold,
+        is_italic=r.font.italic,
+        is_underline=r.font.underline,
+    )
+
+
+def _get_section_margin(s: Section) -> Margin:
+    return Margin(
+        left   = s.left_margin.mm   if s.left_margin   is not None else None,
+        right  = s.right_margin.mm  if s.right_margin  is not None else None,
+        top    = s.top_margin.mm    if s.top_margin    is not None else None,
+        bottom = s.bottom_margin.mm if s.bottom_margin is not None else None,
+    )
+
+
 def parse_docx_file(file_bytes: bytes, filename: str) -> DocumentInfo:
     try:
         document = Document(BytesIO(file_bytes))
@@ -51,30 +89,7 @@ def parse_docx_file(file_bytes: bytes, filename: str) -> DocumentInfo:
         raise ValueError(f"Не удалось открыть файл") from e
 
     paragraphs = [
-        ParagraphInfo(
-            index_=i,
-            text=p.text,
-            style=p.style.name if p.style else None,
-            alignment=str(p.alignment) if p.alignment is not None else None,
-            first_line_indent=(
-                p.paragraph_format.first_line_indent.cm
-                if p.paragraph_format.first_line_indent
-                else None
-            ),
-            line_spacing=p.paragraph_format.line_spacing,
-            runs=[
-                RunInfo(
-                    text=r.text,
-                    font_name=r.font.name,
-                    font_size=r.font.size.pt if r.font.size else None,
-                    is_bold=r.font.bold,
-                    is_italic=r.font.italic,
-                    is_underline=r.font.underline,
-                )
-                for r in p.runs
-            ],
-        )
-        for i, p in enumerate(document.paragraphs)
+        _get_paragraph_info(i, p) for i, p in enumerate(document.paragraphs)
     ]
 
     sections = [
@@ -85,20 +100,7 @@ def parse_docx_file(file_bytes: bytes, filename: str) -> DocumentInfo:
             page_height=(
                 s.page_height.mm if s.page_height is not None else None
             ),
-            margin=Margin(
-                left=(
-                    s.left_margin.mm if s.left_margin is not None else None
-                ),
-                right=(
-                    s.right_margin.mm if s.right_margin is not None else None
-                ),
-                top=(
-                    s.top_margin.mm if s.top_margin is not None else None
-                ),
-                bottom=(
-                    s.bottom_margin.mm if s.bottom_margin is not None else None
-                ),
-            ),
+            margin=_get_section_margin(s),
         )
         for s in document.sections
     ]
