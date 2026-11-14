@@ -5,6 +5,7 @@ from services.rules import Issue, RULES
 
 logger = logging.getLogger(__name__)
 
+
 def check_document(parsed: dict, standard: str) -> list[dict]:
     all_issues: list[Issue] = []
     for rule_func in RULES:
@@ -21,6 +22,7 @@ def check_document(parsed: dict, standard: str) -> list[dict]:
         result.append(issue.to_dict())
 
     return result
+
 
 def summarize(issues: list[dict]) -> dict:
     return {

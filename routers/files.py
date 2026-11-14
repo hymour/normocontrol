@@ -11,11 +11,12 @@ from services.store import Session, save
 MAX_SIZE = 20*1024*1024
 router = APIRouter()
 
+
 @router.post("/api/upload")
 async def upload(
     file: UploadFile = File(...), 
-    standard: str = Form("GOST_732")
-    ):
+    standard: str = Form("GOST_732"),
+):
     if not file.filename or not file.filename.lower().endswith(".docx"):
         raise HTTPException(400, "Поддерживается только формат .docx!")
 
@@ -24,7 +25,11 @@ async def upload(
         raise HTTPException(413, "Файл слишком большой");
 
     try:
-        parsed_data = await run_in_threadpool(parse_docx_file, file_bytes, file.filename)
+        parsed_data = await run_in_threadpool(
+            parse_docx_file,
+            file_bytes,
+            file.filename,
+        )
     except ValueError as e:
         raise HTTPException(400, str(e))
 
@@ -32,7 +37,11 @@ async def upload(
 
     result_bytes = None
     if errors:
-        result_bytes = await run_in_threadpool(add_comments, file_bytes, errors)
+        result_bytes = await run_in_threadpool(
+            add_comments,
+            file_bytes,
+            errors,
+        )
 
     session_id = uuid.uuid4().hex
     save(session_id, Session(

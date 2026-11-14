@@ -2,6 +2,7 @@ from io import BytesIO
 
 from docx import Document
 
+
 def parse_docx_file(file_bytes: bytes, filename: str) -> dict:
     try:
         doc = Document(BytesIO(file_bytes))
@@ -16,7 +17,11 @@ def parse_docx_file(file_bytes: bytes, filename: str) -> dict:
             "text": p.text,
             "style": p.style.name if p.style else None,
             "alignment": str(p.alignment) if p.alignment is not None else None,
-            "first_line_indent_cm": pf.first_line_indent.cm if pf.first_line_indent else None,
+            "first_line_indent_cm": (
+                pf.first_line_indent.cm
+                if pf.first_line_indent
+                else None
+            ),
             "line_spacing": pf.line_spacing,
             "runs": [
                 {
@@ -28,7 +33,7 @@ def parse_docx_file(file_bytes: bytes, filename: str) -> dict:
                     "underline": r.font.underline,
                 }
                 for r in p.runs
-            ]
+            ],
         })
 
     sections = [
