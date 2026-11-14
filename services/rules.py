@@ -18,19 +18,6 @@ class Issue:
         return asdict(self)
 
 
-def error(
-    rule_id: str,
-    category: str,
-    message: str,
-    paragraph_index: int | None = None,
-) -> Issue:
-    return Issue(
-        rule_id=rule_id,
-        category=category,
-        message=message,
-        paragraph_index=paragraph_index,
-    )
-
 # --- константы ГОСТ
 GOST_FONT = "Times New Roman"
 GOST_FONT_SIZE_PT_MIN = 12
@@ -69,7 +56,7 @@ def check_margins(parsed: DocumentInfo, standard: str) -> list[Issue]:
                 continue
 
             if not math.isclose(actual, expected, rel_tol=0.0, abs_tol=1.0):
-                issues.append(error(
+                issues.append(Issue(
                     rule_id=f"document.margins.{name}",
                     category="document",
                     message=(
