@@ -5,6 +5,13 @@ from typing import NamedTuple, SupportsFloat, SupportsIndex
 from services.parser import DocumentInfo, Margin
 
 
+# for `StrEnum`'s, auto-generated values are lowercased names,
+# e.g. `GOST_732 = auto()` <=> `GOST_732 = "gost_732"`
+class Standard(StrEnum):
+    GOST_732 = auto()
+    MU_PO = auto()
+
+
 class IssueCategory(StrEnum):
     DOCUMENT = auto()
 
@@ -17,7 +24,7 @@ class Issue(NamedTuple):
     rule_id: str
     category: IssueCategory
     message: str
-    standard: str
+    standard: Standard
     severity: IssueSeverity = IssueSeverity.ERROR
     paragraph_index: SupportsIndex | None = None
 
@@ -48,9 +55,14 @@ MUPO_MARGIN_MM=Margin(
 
 # --- функции проверки
 # --- оформления документа
-def check_margins(parsed: DocumentInfo, standard: str) -> list[Issue]:
+def check_margins(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
     issues: list[Issue] = []
-    margin = GOST_MARGIN_MM if standard == "GOST_732" else MUPO_MARGIN_MM
+
+    match standard:
+        case Standard.GOST_732:
+            margin = GOST_MARGIN_MM
+        case Standard.MU_PO:
+            margin = MUPO_MARGIN_MM
 
     for s in parsed.sections:
         for name in Margin._fields:

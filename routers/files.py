@@ -6,6 +6,7 @@ from fastapi.concurrency import run_in_threadpool
 from services.checker import check_document
 from services.comment import add_comments
 from services.parser import parse_docx_file
+from services.rules import Standard
 from services.store import Session, save
 
 MAX_SIZE = 20*1024*1024
@@ -19,6 +20,8 @@ async def upload(
 ):
     if not file.filename or not file.filename.lower().endswith(".docx"):
         raise HTTPException(400, "Поддерживается только формат .docx!")
+
+    standard = Standard(standard.lower())
 
     file_bytes = await file.read()
     if len(file_bytes) > MAX_SIZE:
@@ -53,5 +56,5 @@ async def upload(
     return {
         "session_id": session_id,
         "has_errors": bool(errors),
-        "errors": errors if errors else [],
+        "errors": errors,
     }
