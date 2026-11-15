@@ -1,47 +1,64 @@
 import uuid
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
 
 from services.checker import check_document
-from services.store import Session, save
-from services.parser import parse_docx_file
 from services.comment import add_comments
+from services.parser import parse_docx_file
+from services.rules import Standard
+from services.store import Session, save
+
 
 MAX_SIZE = 20*1024*1024
 router = APIRouter()
 
+
 @router.post("/api/upload")
 async def upload(
     file: UploadFile = File(...), 
-    standard: str = Form("GOST_732")
-    ):
+    standard: str = Form("GOST_7_32"),
+):
     if not file.filename or not file.filename.lower().endswith(".docx"):
         raise HTTPException(400, "Поддерживается только формат .docx!")
 
+    try:
+        standard = Standard(standard.lower())
+    except ValueError:
+        raise HTTPException(400, "Указан неизвестный стандарт")
+
     file_bytes = await file.read()
     if len(file_bytes) > MAX_SIZE:
-        raise HTTPException(413, "Файл слишком большой");
+        raise HTTPException(413, "Файл слишком большой")
 
     try:
-        parsed_data = await run_in_threadpool(parse_docx_file, file_bytes, file.filename)
+        parsed_data = await run_in_threadpool(
+            parse_docx_file,
+            file_bytes,
+            file.filename,
+        )
     except ValueError as e:
         raise HTTPException(400, str(e))
 
-    errors = await run_in_threadpool(check_document, parsed_data, standard)
+    issues = await run_in_threadpool(check_document, parsed_data, standard)
 
     result_bytes = None
-    if errors:
-        result_bytes = await run_in_threadpool(add_comments, file_bytes, errors)
+    if issues:
+        result_bytes = await run_in_threadpool(
+            add_comments,
+            file_bytes,
+            issues,
+        )
 
     session_id = uuid.uuid4().hex
     save(session_id, Session(
         o_filename=file.filename,
         result_bytes=result_bytes,
-        has_errors=bool(errors),
+        has_issues=bool(issues),
     ))
 
     return {
         "session_id": session_id,
-        "has_errors": bool(errors),
-        "errors": errors if errors else [],
+        "has_issues": bool(issues),
+        "issues": issues,
     }

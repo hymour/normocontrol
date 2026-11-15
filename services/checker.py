@@ -1,11 +1,22 @@
-import logging
 from collections import Counter
-from services.rules import Issue, RULES
+from collections.abc import Mapping
+import logging
+from typing import NamedTuple, SupportsIndex
+
+from services.parser import DocumentInfo
+from services.rules import Issue, RULES, IssueCategory, Standard
 
 logger = logging.getLogger(__name__)
 
-def check_document(parsed: dict, standard: str) -> list[dict]:
+
+class Summary(NamedTuple):
+    total: SupportsIndex
+    by_category: Mapping[IssueCategory, SupportsIndex]
+
+
+def check_document(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
     all_issues: list[Issue] = []
+
     for rule_func in RULES:
         try:
             issues = rule_func(parsed, standard)
@@ -14,15 +25,11 @@ def check_document(parsed: dict, standard: str) -> list[dict]:
         except Exception:
             logger.exception(f"Ошибка в правиле {rule_func.__name__}")
 
-    result = []
-    for issue in all_issues:
-        issue.standard = standard
-        result.append(issue.to_dict())
+    return all_issues
 
-    return result
 
-def summarize(issues: list[dict]) -> dict:
-    return {
-        "total": len(issues),
-        "by_category": dict(Counter(i["category"] for i in issues)),
-    }
+def summarize(issues: list[Issue]) -> Summary:
+    return Summary(
+        total=len(issues),
+        by_category=Counter(i.category for i in issues),
+    )
