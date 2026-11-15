@@ -7,12 +7,20 @@ from docx.text.paragraph import Paragraph
 from docx.text.run import Run
 
 
-class DocumentInfo(NamedTuple):
-    filename: str
-    paragraphs: list[ParagraphInfo]
-    sections: list[SectionInfo]
-    tables_count: SupportsIndex
-    images_count: SupportsIndex
+class Margin(NamedTuple):
+    left:   SupportsFloat | None  # mm
+    right:  SupportsFloat | None  # mm
+    top:    SupportsFloat | None  # mm
+    bottom: SupportsFloat | None  # mm
+
+
+class RunInfo(NamedTuple):
+    text: str
+    font_name: str | None
+    font_size: SupportsFloat | None  # pt
+    is_bold: bool | None
+    is_italic: bool | None
+    is_underline: bool | None
 
 
 class ParagraphInfo(NamedTuple):
@@ -25,26 +33,18 @@ class ParagraphInfo(NamedTuple):
     runs: list[RunInfo]
 
 
-class RunInfo(NamedTuple):
-    text: str
-    font_name: str | None
-    font_size: SupportsFloat | None  # pt
-    is_bold: bool | None
-    is_italic: bool | None
-    is_underline: bool | None
-
-
 class SectionInfo(NamedTuple):
     page_width:  SupportsFloat | None  # mm
     page_height: SupportsFloat | None  # mm
     margin: Margin
 
 
-class Margin(NamedTuple):
-    left:   SupportsFloat | None  # mm
-    right:  SupportsFloat | None  # mm
-    top:    SupportsFloat | None  # mm
-    bottom: SupportsFloat | None  # mm
+class DocumentInfo(NamedTuple):
+    filename: str
+    paragraphs: list[ParagraphInfo]
+    sections: list[SectionInfo]
+    tables_count: SupportsIndex
+    images_count: SupportsIndex
 
 
 def _get_paragraph_info(i: SupportsIndex, p: Paragraph) -> ParagraphInfo:
