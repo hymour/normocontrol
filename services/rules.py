@@ -1,8 +1,19 @@
 from enum import StrEnum, auto
-import math
 from typing import NamedTuple, SupportsFloat, SupportsIndex
 
+from external.constraints import (
+    AnyValue,
+    Constraint,
+    Minimum,
+    OneOf,
+)
 from services.parser import DocumentInfo, Margin
+from utils.constraints_extended import (
+    CloseTo,
+    CloseToOneOf,
+    OptionalUnwrapConstraint,
+    constraint_to_str,
+)
 
 
 # for `StrEnum`'s, auto-generated values are lowercased names,
@@ -29,28 +40,52 @@ class Issue(NamedTuple):
     paragraph_index: SupportsIndex | None = None
 
 
-# --- константы ГОСТ
-GOST_FONT = "Times New Roman"
-GOST_FONT_SIZE_PT_MIN = 12
-GOST_INTERVAL = 1.5
-GOST_MARGIN_MM = Margin(
-    left=30,
-    right=15,
-    top=20,
-    bottom=20,
-)
+class MarginConstraints(NamedTuple):
+    left:   Constraint[SupportsFloat | None]
+    right:  Constraint[SupportsFloat | None]
+    top:    Constraint[SupportsFloat | None]
+    bottom: Constraint[SupportsFloat | None]
 
-# --- константы МУ ПО
-MUPO_FONT = "Times New Roman"
-MUPO_FONT_SIZE_PT = {12, 14}
-MUPO_INTERVAL = 1.5
-MUPO_PARA_INDENT_CM = 1.25
-MUPO_MARGIN_MM = Margin(
-    left=30,
-    right=10,
-    top=20,
-    bottom=20,
-)
+
+class StandardParams(NamedTuple):
+    # document
+    margin: MarginConstraints
+    line_spacing: Constraint[float | int]
+
+    # text
+    font: Constraint[str]
+    font_size: Constraint[float | int]  # pt
+    first_line_indent: Constraint[float | int]  # cm
+
+
+_STANDARDS_PARAMS = {
+    Standard.GOST_7_32: StandardParams(
+        margin=MarginConstraints(
+            left   = OptionalUnwrapConstraint(CloseTo(30, abs_tol=1.0)),
+            right  = OptionalUnwrapConstraint(CloseTo(15, abs_tol=1.0)),
+            top    = OptionalUnwrapConstraint(CloseTo(20, abs_tol=1.0)),
+            bottom = OptionalUnwrapConstraint(CloseTo(20, abs_tol=1.0)),
+        ),
+        line_spacing=CloseTo(1.5),
+
+        font=OneOf({"Times New Roman"}),
+        font_size=Minimum(12),
+        first_line_indent=AnyValue(),
+    ),
+    Standard.MU_PO: StandardParams(
+        margin=MarginConstraints(
+            left   = OptionalUnwrapConstraint(CloseTo(30, abs_tol=1.0)),
+            right  = OptionalUnwrapConstraint(CloseTo(10, abs_tol=1.0)),
+            top    = OptionalUnwrapConstraint(CloseTo(20, abs_tol=1.0)),
+            bottom = OptionalUnwrapConstraint(CloseTo(20, abs_tol=1.0)),
+        ),
+        line_spacing=CloseTo(1.5),
+
+        font=OneOf({"Times New Roman"}),
+        font_size=CloseToOneOf({12, 14}),
+        first_line_indent=CloseTo(1.25),
+    ),
+}
 
 
 # --- функции проверки
@@ -58,28 +93,24 @@ MUPO_MARGIN_MM = Margin(
 def check_margins(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
     issues: list[Issue] = []
 
-    match standard:
-        case Standard.GOST_7_32:
-            margin = GOST_MARGIN_MM
-        case Standard.MU_PO:
-            margin = MUPO_MARGIN_MM
+    margin = _STANDARDS_PARAMS[standard].margin
 
     for s in parsed.sections:
         for name in Margin._fields:
             actual: SupportsFloat | None = getattr(s.margin, name)
-            expected: SupportsFloat = getattr(margin, name)
+            constraint: Constraint[SupportsFloat | None] = getattr(margin, name)
 
             if actual is None:
                 continue
 
-            if not math.isclose(actual, expected, rel_tol=0.0, abs_tol=1.0):
+            if not constraint.allows(actual):
                 category = IssueCategory.DOCUMENT
                 issues.append(Issue(
                     rule_id=f"{category}.margins.{name}",
                     category=category,
                     message=(
                         f"Поле {name} = {actual:.0f} мм, "
-                        f"ожидается {expected} мм"
+                        f"ожидается {constraint_to_str(constraint)} мм"
                     ),
                     standard=standard,
                 ))
