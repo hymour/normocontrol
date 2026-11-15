@@ -5,7 +5,7 @@ from dataclasses import dataclass
 class Session:
     o_filename: str
     result_bytes: bytes | None
-    has_errors: bool
+    has_issues: bool
 
 
 _sessions: dict[str, Session] = {}

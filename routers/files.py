@@ -40,25 +40,25 @@ async def upload(
     except ValueError as e:
         raise HTTPException(400, str(e))
 
-    errors = await run_in_threadpool(check_document, parsed_data, standard)
+    issues = await run_in_threadpool(check_document, parsed_data, standard)
 
     result_bytes = None
-    if errors:
+    if issues:
         result_bytes = await run_in_threadpool(
             add_comments,
             file_bytes,
-            errors,
+            issues,
         )
 
     session_id = uuid.uuid4().hex
     save(session_id, Session(
         o_filename=file.filename,
         result_bytes=result_bytes,
-        has_errors=bool(errors),
+        has_issues=bool(issues),
     ))
 
     return {
         "session_id": session_id,
-        "has_errors": bool(errors),
-        "errors": errors,
+        "has_issues": bool(issues),
+        "issues": issues,
     }
