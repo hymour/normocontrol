@@ -7,7 +7,7 @@ from external.constraints import (
     Minimum,
     OneOf,
 )
-from services.parser import DocumentInfo, Margin
+from services.parser import DocumentInfo
 from utils.constraints_extended import (
     CloseTo,
     CloseToOneOf,
@@ -90,30 +90,53 @@ _STANDARDS_PARAMS = {
 
 # --- функции проверки
 # --- оформления документа
-def check_margins(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
+def check_sections(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
     issues: list[Issue] = []
 
     margin = _STANDARDS_PARAMS[standard].margin
+    category = IssueCategory.DOCUMENT
 
     for s in parsed.sections:
-        for name in Margin._fields:
-            actual: SupportsFloat | None = getattr(s.margin, name)
-            constraint: Constraint[SupportsFloat | None] = getattr(margin, name)
-
-            if actual is None:
-                continue
-
-            if not constraint.allows(actual):
-                category = IssueCategory.DOCUMENT
-                issues.append(Issue(
-                    rule_id=f"{category}.margins.{name}",
-                    category=category,
-                    message=(
-                        f"Поле {name} = {actual:.0f} мм, "
-                        f"ожидается {constraint_to_str(constraint)} мм"
-                    ),
-                    standard=standard,
-                ))
+        if not margin.left.allows(s.margin.left):
+            issues.append(Issue(
+                rule_id=f"{category}.margins.left",
+                category=category,
+                message=(
+                    f"Левое поле — {s.margin.left:.0f} мм, "
+                    f"ожидается {constraint_to_str(margin.left)} мм"
+                ),
+                standard=standard,
+            ))
+        if not margin.right.allows(s.margin.right):
+            issues.append(Issue(
+                rule_id=f"{category}.margins.right",
+                category=category,
+                message=(
+                    f"Правое поле — {s.margin.right:.0f} мм, "
+                    f"ожидается {constraint_to_str(margin.right)} мм"
+                ),
+                standard=standard,
+            ))
+        if not margin.top.allows(s.margin.top):
+            issues.append(Issue(
+                rule_id=f"{category}.margins.top",
+                category=category,
+                message=(
+                    f"Верхнее поле — {s.margin.top:.0f} мм, "
+                    f"ожидается {constraint_to_str(margin.top)} мм"
+                ),
+                standard=standard,
+            ))
+        if not margin.bottom.allows(s.margin.bottom):
+            issues.append(Issue(
+                rule_id=f"{category}.margins.bottom",
+                category=category,
+                message=(
+                    f"Нижнее поле — {s.margin.bottom:.0f} мм, "
+                    f"ожидается {constraint_to_str(margin.bottom)} мм"
+                ),
+                standard=standard,
+            ))
 
     return issues
 
@@ -127,5 +150,5 @@ def _iter_runs(parsed: DocumentInfo):
 
 
 RULES = [
-    check_margins,
+    check_sections,
 ]
