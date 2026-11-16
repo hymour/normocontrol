@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from collections.abc import Sequence
 from io import BytesIO
 
@@ -14,14 +15,12 @@ DOCUMENT_LEVEL_PREFIX = "[Документ] "
 
 
 def _find_first_non_empty_paragraph(paragraphs: Sequence[Paragraph]) -> Paragraph | None:
-    #Ищет первый абзац, в котором есть хоть какой-то текст.
     for p in paragraphs:
-        if p.text.strip():  # Проверяем, что там не просто пробелы
+        if p.text.strip():
             return p
-    return None  # Если документ вообще пустой
+    return None
 
-
-def add_comments(file_bytes: bytes, issues: Sequence[Issue]) -> bytes:
+def add_comments(file_bytes: bytes, issues: Iterable[Issue]) -> bytes:
     document = Document(BytesIO(file_bytes))
     paragraphs = document.paragraphs
 
@@ -30,8 +29,10 @@ def add_comments(file_bytes: bytes, issues: Sequence[Issue]) -> bytes:
         message = issue.message
 
         if idx is None:
-            # Ошибка уровня документа. Ищем первый абзац с текстом.
+            # Ошибка уровня документа. Ищем первый абзац с текстом. (для красивого выделения
             anchor_target = _find_first_non_empty_paragraph(paragraphs)
+            if anchor_target is None:
+                continue  # Документ полностью пустой, клеить некуда
             message = DOCUMENT_LEVEL_PREFIX + message
         else:
             # Ошибка конкретного абзаца
