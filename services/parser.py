@@ -86,7 +86,7 @@ def parse_docx_file(file_bytes: bytes, filename: str) -> DocumentInfo:
     try:
         document = Document(BytesIO(file_bytes))
     except Exception as e:
-        raise ValueError(f"Не удалось открыть файл") from e
+        raise ValueError("Не удалось открыть файл") from e
 
     paragraphs = [
         _get_paragraph_info(i, p) for i, p in enumerate(document.paragraphs)
