@@ -89,6 +89,19 @@ _STANDARDS_PARAMS = {
 }
 
 
+def format_issue_message(
+    subject: str,
+    actual: str,
+    expected: str,
+    units: str | None = None,
+) -> str:
+    if units:
+        return f"{subject} — {actual} {units}, ожидается {expected} {units}"
+
+    # `units` is None or empty string
+    return f"{subject} — {actual}, ожидается {expected}"
+
+
 # --- функции проверки
 # --- оформления документа
 def check_sections(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
@@ -102,9 +115,11 @@ def check_sections(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
             issues.append(Issue(
                 rule_id=f"{category}.margins.left",
                 category=category,
-                message=(
-                    f"Левое поле — {s.margin.left:.0f} мм, "
-                    f"ожидается {constraint_to_str(margin.left)} мм"
+                message=format_issue_message(
+                    "Левое поле",
+                    f"{s.margin.left:.0f}",
+                    f"{constraint_to_str(margin.left)}",
+                    "мм",
                 ),
                 standard=standard,
             ))
@@ -112,9 +127,11 @@ def check_sections(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
             issues.append(Issue(
                 rule_id=f"{category}.margins.right",
                 category=category,
-                message=(
-                    f"Правое поле — {s.margin.right:.0f} мм, "
-                    f"ожидается {constraint_to_str(margin.right)} мм"
+                message=format_issue_message(
+                    "Правое поле",
+                    f"{s.margin.right:.0f}",
+                    f"{constraint_to_str(margin.right)}",
+                    "мм",
                 ),
                 standard=standard,
             ))
@@ -122,9 +139,11 @@ def check_sections(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
             issues.append(Issue(
                 rule_id=f"{category}.margins.top",
                 category=category,
-                message=(
-                    f"Верхнее поле — {s.margin.top:.0f} мм, "
-                    f"ожидается {constraint_to_str(margin.top)} мм"
+                message=format_issue_message(
+                    "Верхнее поле",
+                    f"{s.margin.top:.0f}",
+                    f"{constraint_to_str(margin.top)}",
+                    "мм",
                 ),
                 standard=standard,
             ))
@@ -132,9 +151,11 @@ def check_sections(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
             issues.append(Issue(
                 rule_id=f"{category}.margins.bottom",
                 category=category,
-                message=(
-                    f"Нижнее поле — {s.margin.bottom:.0f} мм, "
-                    f"ожидается {constraint_to_str(margin.bottom)} мм"
+                message=format_issue_message(
+                    "Нижнее поле",
+                    f"{s.margin.bottom:.0f}",
+                    f"{constraint_to_str(margin.bottom)}",
+                    "мм",
                 ),
                 standard=standard,
             ))
@@ -153,9 +174,10 @@ def check_paragraphs(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
             issues.append(Issue(
                 rule_id=f"{category}.line_spacing",
                 category=category,
-                message=(
-                    f"Межстрочный интервал — {p.line_spacing:.0f} мм, "
-                    f"ожидается {constraint_to_str(params.line_spacing)} мм"
+                message=format_issue_message(
+                    "Межстрочный интервал",
+                    f"{p.line_spacing}",
+                    f"{constraint_to_str(params.line_spacing)}",
                 ),
                 standard=standard,
             ))
@@ -165,9 +187,11 @@ def check_paragraphs(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
             issues.append(Issue(
                 rule_id=f"{category}.first_line_indent",
                 category=category,
-                message=(
-                    f"Отступ первой строки — {p.first_line_indent:.0f} мм, "
-                    f"ожидается {constraint_to_str(params.first_line_indent)} мм"
+                message=format_issue_message(
+                    "Отступ первой строки",
+                    f"{p.first_line_indent}",
+                    f"{constraint_to_str(params.first_line_indent)}",
+                    "см",
                 ),
                 standard=standard,
             ))
