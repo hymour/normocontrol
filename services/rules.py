@@ -25,6 +25,7 @@ class Standard(StrEnum):
 
 class IssueCategory(StrEnum):
     DOCUMENT = auto()
+    TEXT = auto()
 
 
 class IssueSeverity(StrEnum):
@@ -66,10 +67,10 @@ _STANDARDS_PARAMS = {
             top    = OptionalUnwrapConstraint(CloseTo(20, abs_tol=1.0)),
             bottom = OptionalUnwrapConstraint(CloseTo(20, abs_tol=1.0)),
         ),
-        line_spacing=CloseTo(1.5),
+        line_spacing=OptionalUnwrapConstraint(CloseTo(1.5)),
 
         font=OneOf({"Times New Roman"}),
-        font_size=Minimum(12),
+        font_size=OptionalUnwrapConstraint(Minimum(12.0)),
         first_line_indent=AnyValue(),
     ),
     Standard.MU_PO: StandardParams(
@@ -79,11 +80,11 @@ _STANDARDS_PARAMS = {
             top    = OptionalUnwrapConstraint(CloseTo(20, abs_tol=1.0)),
             bottom = OptionalUnwrapConstraint(CloseTo(20, abs_tol=1.0)),
         ),
-        line_spacing=CloseTo(1.5),
+        line_spacing=OptionalUnwrapConstraint(CloseTo(1.5)),
 
         font=OneOf({"Times New Roman"}),
-        font_size=CloseToOneOf({12, 14}),
-        first_line_indent=CloseTo(1.25),
+        font_size=OptionalUnwrapConstraint(CloseToOneOf({12, 14})),
+        first_line_indent=OptionalUnwrapConstraint(CloseTo(1.25)),
     ),
 }
 
@@ -141,6 +142,39 @@ def check_sections(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
     return issues
 
 
+def check_paragraphs(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
+    issues: list[Issue] = []
+
+    params = _STANDARDS_PARAMS[standard]
+
+    for p in parsed.paragraphs:
+        if not params.line_spacing.allows(p.line_spacing):
+            category = IssueCategory.DOCUMENT
+            issues.append(Issue(
+                rule_id=f"{category}.line_spacing",
+                category=category,
+                message=(
+                    f"Межстрочный интервал — {p.line_spacing:.0f} мм, "
+                    f"ожидается {constraint_to_str(params.line_spacing)} мм"
+                ),
+                standard=standard,
+            ))
+
+        if not params.first_line_indent.allows(p.first_line_indent):
+            category = IssueCategory.TEXT
+            issues.append(Issue(
+                rule_id=f"{category}.first_line_indent",
+                category=category,
+                message=(
+                    f"Отступ первой строки — {p.first_line_indent:.0f} мм, "
+                    f"ожидается {constraint_to_str(params.first_line_indent)} мм"
+                ),
+                standard=standard,
+            ))
+
+    return issues
+
+
 # --- финал
 def _iter_runs(parsed: DocumentInfo):
     for para in parsed.paragraphs:
@@ -151,4 +185,5 @@ def _iter_runs(parsed: DocumentInfo):
 
 RULES = [
     check_sections,
+    check_paragraphs,
 ]
