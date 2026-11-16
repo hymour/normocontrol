@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Нормоконтроль документов</title>
+    <link rel="stylesheet" href="frontend/style.css">
+    
+</head>
+<body>
+    <div class="container">
+        <!-- Загрузка документа и выбор стандарта -->
+        <div id="upload-screen" class="screen active">
+            <div id="notification" class="notification">Файл скачан успешно</div>
+            <header>
+                <h1>Нормоконтроль <span>DOCX</span></h1>
+                <p>Проверьте свой документ на соответствие ГОСТ или МУ кафедры</p>
+            </header>
+
+            <!-- выпадающий список -->
+            <div class="standard-selector">
+                <label for="standard-select">Выберите стандарт проверки:</label>
+                <select id="standard-select" disabled>
+                    <option value="gost_7_32">ГОСТ 7.32-2017</option>
+                    <option value="mu_po">Методические указания кафедры</option>
+                </select>
+            </div>
+
+            <!-- Drag and Drop -->
+            <div id="drop-zone" class="drop-zone">
+                <input type="file" id="file-input" accept=".docx" hidden>
+                <div class="drop-zone-content">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#2B579A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <p class="file-name" id="file-name">Файл не выбран</p>
+                    <button type="button" class="btn-primary" id="select-btn">Выбрать файл</button>
+                    <p class="hint">или перетащите файл сюда (.docx)</p>
+                </div>
+            </div>
+
+            <!-- кнопка "Проверить" -->
+            <button type="button" class="btn-action hidden" id="check-btn">Проверить документ</button>
+        </div>
+
+        <!-- Загрузка-спиннер -->
+        <div id="loading-screen" class="screen">
+            <div class="loader"></div>
+            <h2>Анализируем документ...</h2>
+            <p>Это может занять несколько секунд</p>
+        </div>
+
+        <!-- Результат -->
+        <div id="result-screen" class="screen">
+            <div class="result-icon" id="result-icon"></div>
+            <h2 id="result-title">Проверка завершена!</h2>
+            <p id="result-message">...</p>
+            <!-- кнопка скачивания (по умолчанию скрыта) -->
+            <a href="#" id="download-link" class="btn-primary" download>
+                Скачать файл с комментариями
+            </a>
+            
+            <button type="button" class="btn-secondary" id="back-btn">← Назад на главную</button>
+        </div>
+    </div>
+<script src="frontend/script.js"></script>
+</body>
+</html>

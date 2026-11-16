@@ -1,14 +1,15 @@
 import uuid
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Response
 from fastapi.concurrency import run_in_threadpool
 
 from services.checker import check_document
 from services.comment import add_comments
 from services.parser import parse_docx_file
 from services.rules import Standard
-from services.store import Session, save
+from services.store import Session, save, pop
 
+from urllib.parse import quote
 
 MAX_SIZE = 20*1024*1024
 router = APIRouter()
@@ -62,3 +63,26 @@ async def upload(
         "has_issues": bool(issues),
         "issues": issues,
     }
+
+@router.get("/api/download/{session_id}")
+async def download(session_id: str):
+    session = pop(session_id) 
+    
+    if not session:
+        raise HTTPException(404, "Сессия не найдена или истекла")
+        
+    if not session.result_bytes:
+        raise HTTPException(404, "Ошибок не обнаружено")
+
+    original_name = session.o_filename.rsplit('.', 1)[0]
+    download_name = f"{original_name}_checked.docx"
+    
+    encoded_filename = quote(download_name)
+
+    return Response(
+        content=session.result_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
+        }
+    )
