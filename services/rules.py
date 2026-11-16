@@ -1,5 +1,5 @@
 from enum import StrEnum, auto
-from typing import NamedTuple, SupportsFloat, SupportsIndex
+from typing import NamedTuple, SupportsIndex
 
 from external.constraints import (
     AnyValue,
@@ -42,21 +42,21 @@ class Issue(NamedTuple):
 
 
 class MarginConstraints(NamedTuple):
-    left:   Constraint[SupportsFloat | None]
-    right:  Constraint[SupportsFloat | None]
-    top:    Constraint[SupportsFloat | None]
-    bottom: Constraint[SupportsFloat | None]
+    left:   Constraint[float | None]
+    right:  Constraint[float | None]
+    top:    Constraint[float | None]
+    bottom: Constraint[float | None]
 
 
 class StandardParams(NamedTuple):
     # document
     margin: MarginConstraints
-    line_spacing: Constraint[float | int]
+    line_spacing: Constraint[float | None]
 
     # text
-    font: Constraint[str]
-    font_size: Constraint[float | int]  # pt
-    first_line_indent: Constraint[float | int]  # cm
+    font: Constraint[str | None]
+    font_size: Constraint[float | None]  # pt
+    first_line_indent: Constraint[float | None]  # cm
 
 
 _STANDARDS_PARAMS = {

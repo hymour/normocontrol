@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import NamedTuple, SupportsFloat, SupportsIndex
+from typing import NamedTuple, SupportsIndex
 
 from docx import Document
 from docx.section import Section
@@ -8,16 +8,16 @@ from docx.text.run import Run
 
 
 class Margin(NamedTuple):
-    left:   SupportsFloat | None  # mm
-    right:  SupportsFloat | None  # mm
-    top:    SupportsFloat | None  # mm
-    bottom: SupportsFloat | None  # mm
+    left:   float | None  # mm
+    right:  float | None  # mm
+    top:    float | None  # mm
+    bottom: float | None  # mm
 
 
 class RunInfo(NamedTuple):
     text: str
     font_name: str | None
-    font_size: SupportsFloat | None  # pt
+    font_size: float | None  # pt
     is_bold: bool | None
     is_italic: bool | None
     is_underline: bool | None
@@ -28,14 +28,14 @@ class ParagraphInfo(NamedTuple):
     text: str
     style: str | None
     alignment: str | None
-    first_line_indent: SupportsFloat | None  ## cm
-    line_spacing: SupportsFloat | None
+    first_line_indent: float | None  ## cm
+    line_spacing: float | None
     runs: list[RunInfo]
 
 
 class SectionInfo(NamedTuple):
-    page_width:  SupportsFloat | None  # mm
-    page_height: SupportsFloat | None  # mm
+    page_width:  float | None  # mm
+    page_height: float | None  # mm
     margin: Margin
 
 
