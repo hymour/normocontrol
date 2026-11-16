@@ -62,10 +62,10 @@ class StandardParams(NamedTuple):
 _STANDARDS_PARAMS = {
     Standard.GOST_7_32: StandardParams(
         margin=MarginConstraints(
-            left   = OptionalUnwrapConstraint(CloseTo(30, abs_tol=1.0)),
-            right  = OptionalUnwrapConstraint(CloseTo(15, abs_tol=1.0)),
-            top    = OptionalUnwrapConstraint(CloseTo(20, abs_tol=1.0)),
-            bottom = OptionalUnwrapConstraint(CloseTo(20, abs_tol=1.0)),
+            left   = OptionalUnwrapConstraint(CloseTo(30.0, abs_tol=1.0)),
+            right  = OptionalUnwrapConstraint(CloseTo(15.0, abs_tol=1.0)),
+            top    = OptionalUnwrapConstraint(CloseTo(20.0, abs_tol=1.0)),
+            bottom = OptionalUnwrapConstraint(CloseTo(20.0, abs_tol=1.0)),
         ),
         line_spacing=OptionalUnwrapConstraint(CloseTo(1.5)),
 
@@ -75,15 +75,15 @@ _STANDARDS_PARAMS = {
     ),
     Standard.MU_PO: StandardParams(
         margin=MarginConstraints(
-            left   = OptionalUnwrapConstraint(CloseTo(30, abs_tol=1.0)),
-            right  = OptionalUnwrapConstraint(CloseTo(10, abs_tol=1.0)),
-            top    = OptionalUnwrapConstraint(CloseTo(20, abs_tol=1.0)),
-            bottom = OptionalUnwrapConstraint(CloseTo(20, abs_tol=1.0)),
+            left   = OptionalUnwrapConstraint(CloseTo(30.0, abs_tol=1.0)),
+            right  = OptionalUnwrapConstraint(Minimum(10.0)),
+            top    = OptionalUnwrapConstraint(Minimum(20.0)),
+            bottom = OptionalUnwrapConstraint(Minimum(20.0)),
         ),
         line_spacing=OptionalUnwrapConstraint(CloseTo(1.5)),
 
         font=OneOf({"Times New Roman"}),
-        font_size=OptionalUnwrapConstraint(CloseToOneOf({12, 14})),
+        font_size=OptionalUnwrapConstraint(CloseToOneOf({12.0, 14.0})),
         first_line_indent=OptionalUnwrapConstraint(CloseTo(1.25)),
     ),
 }
