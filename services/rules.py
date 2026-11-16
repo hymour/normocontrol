@@ -39,6 +39,7 @@ class Issue(NamedTuple):
     standard: Standard
     severity: IssueSeverity = IssueSeverity.ERROR
     paragraph_index: SupportsIndex | None = None
+    section_index: SupportsIndex | None = None
 
 
 class MarginConstraints(NamedTuple):
@@ -110,7 +111,7 @@ def check_sections(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
     margin = _STANDARDS_PARAMS[standard].margin
     category = IssueCategory.DOCUMENT
 
-    for s in parsed.sections:
+    for i, s in enumerate(parsed.sections):
         if not margin.left.allows(s.margin.left):
             issues.append(Issue(
                 rule_id=f"{category}.margins.left",
@@ -122,6 +123,7 @@ def check_sections(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
                     "мм",
                 ),
                 standard=standard,
+                section_index=i,
             ))
         if not margin.right.allows(s.margin.right):
             issues.append(Issue(
@@ -134,6 +136,7 @@ def check_sections(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
                     "мм",
                 ),
                 standard=standard,
+                section_index=i,
             ))
         if not margin.top.allows(s.margin.top):
             issues.append(Issue(
@@ -146,6 +149,7 @@ def check_sections(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
                     "мм",
                 ),
                 standard=standard,
+                section_index=i,
             ))
         if not margin.bottom.allows(s.margin.bottom):
             issues.append(Issue(
@@ -158,6 +162,7 @@ def check_sections(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
                     "мм",
                 ),
                 standard=standard,
+                section_index=i,
             ))
 
     return issues
@@ -168,7 +173,7 @@ def check_paragraphs(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
 
     params = _STANDARDS_PARAMS[standard]
 
-    for p in parsed.paragraphs:
+    for i, p in enumerate(parsed.paragraphs):
         if not params.line_spacing.allows(p.line_spacing):
             category = IssueCategory.DOCUMENT
             issues.append(Issue(
@@ -180,6 +185,7 @@ def check_paragraphs(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
                     f"{constraint_to_str(params.line_spacing)}",
                 ),
                 standard=standard,
+                paragraph_index=i,
             ))
 
         if not params.first_line_indent.allows(p.first_line_indent):
@@ -194,6 +200,7 @@ def check_paragraphs(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
                     "см",
                 ),
                 standard=standard,
+                paragraph_index=i,
             ))
 
     return issues
