@@ -1,10 +1,11 @@
 from io import BytesIO
-from typing import NamedTuple, SupportsIndex
+from typing import NamedTuple
 
 from docx import Document
 from docx.section import Section
 from docx.text.paragraph import Paragraph
 from docx.text.run import Run
+from docx_plus.styles import resolve_effective_formatting
 
 
 class Margin(NamedTuple):
@@ -24,17 +25,17 @@ class RunInfo(NamedTuple):
 
 
 class ParagraphInfo(NamedTuple):
-    index_: SupportsIndex
+    index_: int
     text: str
     style: str | None
     alignment: str | None
-    first_line_indent: float | None  ## cm
+    first_line_indent: float | None  # cm
     line_spacing: float | None
     runs: list[RunInfo]
 
 
 class SectionInfo(NamedTuple):
-    page_width:  float | None  # mm
+    page_width: float | None  # mm
     page_height: float | None  # mm
     margin: Margin
 
@@ -43,19 +44,25 @@ class DocumentInfo(NamedTuple):
     filename: str
     paragraphs: list[ParagraphInfo]
     sections: list[SectionInfo]
-    tables_count: SupportsIndex
-    images_count: SupportsIndex
+    tables_count: int
+    images_count: int
 
 
-def _get_paragraph_info(i: SupportsIndex, p: Paragraph) -> ParagraphInfo:
-    pf = p.paragraph_format
+def _get_paragraph_info(i: int, p: Paragraph) -> ParagraphInfo:
+    pf = resolve_effective_formatting(p)
+
     return ParagraphInfo(
         index_=i,
         text=p.text,
-        style=p.style.name if p.style else None,
-        alignment=str(p.alignment) if p.alignment is not None else None,
+        style=pf.style_name,
+        alignment=pf.alignment,
+
+        # `pf.indent_first_line` is in twips
+        # cm = twips * (2.54 / 1440)
         first_line_indent=(
-            pf.first_line_indent.cm if pf.first_line_indent else None
+            pf.indent_first_line / 1440 * 2.54
+            if pf.indent_first_line is not None
+            else None
         ),
         line_spacing=pf.line_spacing,
         runs=[_get_run_info(r) for r in p.runs],
@@ -63,22 +70,28 @@ def _get_paragraph_info(i: SupportsIndex, p: Paragraph) -> ParagraphInfo:
 
 
 def _get_run_info(r: Run) -> RunInfo:
+    rf = resolve_effective_formatting(r)
+
     return RunInfo(
         text=r.text,
-        font_name=r.font.name,
-        font_size=r.font.size.pt if r.font.size else None,
-        is_bold=r.font.bold,
-        is_italic=r.font.italic,
-        is_underline=r.font.underline,
+        font_name=rf.font_name,
+        font_size=rf.font_size,
+        is_bold=rf.bold,
+        is_italic=rf.italic,
+        is_underline=(
+            bool(rf.underline)
+            if rf.underline is not None
+            else None
+        ),
     )
 
 
 def _get_section_margin(s: Section) -> Margin:
     return Margin(
-        left   = s.left_margin.mm   if s.left_margin   is not None else None,
-        right  = s.right_margin.mm  if s.right_margin  is not None else None,
-        top    = s.top_margin.mm    if s.top_margin    is not None else None,
-        bottom = s.bottom_margin.mm if s.bottom_margin is not None else None,
+        left=s.left_margin.mm if s.left_margin is not None else None,
+        right=s.right_margin.mm if s.right_margin is not None else None,
+        top=s.top_margin.mm if s.top_margin is not None else None,
+        bottom=s.bottom_margin.mm if s.bottom_margin is not None else None,
     )
 
 
