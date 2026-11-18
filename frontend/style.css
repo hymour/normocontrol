@@ -1,0 +1,219 @@
+/* Базовые стили в стиле iLovePDF */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f4f6f8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: #333;
+}
+
+.container {
+    background: #fff;
+    width: 100%;
+    max-width: 600px;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+    min-height: 500px;
+}
+
+/* Управление экранами */
+.screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: fadeIn 0.3s ease;
+}
+.screen.active {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Шапка */
+header h1 {
+    font-size: 28px;
+    color: #333;
+    margin-bottom: 10px;
+}
+header h1 span {
+    color: #2B579A; /* Фирменный красный цвет */
+}
+header p {
+    color: #777;
+    margin-bottom: 30px;
+}
+
+/* Выбор стандарта */
+.standard-selector {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 20px;
+}
+.standard-selector label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #555;
+}
+.standard-selector select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+    background-color: #fafafa;
+}
+.standard-selector select:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+.standard-selector select:not(:disabled) {
+    border-color: #2B579A;
+    background-color: #fff;
+}
+
+/* Зона Drag and Drop */
+.drop-zone {
+    width: 100%;
+    border: 2px dashed #ccc;
+    border-radius: 12px;
+    padding: 40px 20px;
+    background-color: #fafafa;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+.drop-zone.dragover {
+    border-color: #2B579A;
+    background-color: #fff5f5;
+}
+.drop-zone-content svg {
+    margin-bottom: 15px;
+}
+.file-name {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 15px;
+    font-weight: 500;
+    word-break: break-all;
+}
+
+/* Кнопки */
+.btn-primary, .btn-action {
+    background-color: #2B579A;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    width: 100%;
+}
+.btn-primary:hover, .btn-action:hover {
+    background-color: #1e3b66;
+}
+.btn-action {
+    margin-top: 10px;
+}
+.btn-secondary {
+    background: transparent;
+    color: #777;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 20px;
+    padding: 10px;
+}
+.btn-secondary:hover {
+    color: #333;
+}
+.hint {
+    font-size: 13px;
+    color: #999;
+    margin-top: 10px;
+}
+
+/* Скрытие элементов */
+.hidden {
+    display: none !important;
+}
+
+/* Спиннер (Экран загрузки) */
+.loader {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #2B579A;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+#loading-screen h2 {
+    margin-bottom: 10px;
+}
+#loading-screen p {
+    color: #777;
+}
+
+/* Экран результата */
+.result-icon {
+    font-size: 60px;
+    margin-bottom: 20px;
+}
+#result-screen h2 {
+    margin-bottom: 15px;
+}
+#result-message {
+    margin-bottom: 30px;
+    color: #555;
+}
+#download-link {
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #333;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+  z-index: 1000;
+}
+
+.notification.show {
+  opacity: 1;
+  visibility: visible;
+}
