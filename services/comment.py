@@ -13,36 +13,54 @@ from services.rules import Issue
 COMMENT_AUTHOR = "Нормоконтролер"
 DOCUMENT_LEVEL_PREFIX = "[Документ] "
 
-
-def _find_first_non_empty_paragraph(paragraphs: Sequence[Paragraph]) -> Paragraph | None:
-    for p in paragraphs:
-        if p.text.strip():
-            return p
-    return None
-
 def add_comments(file_bytes: bytes, issues: Iterable[Issue]) -> bytes:
     document = Document(BytesIO(file_bytes))
     paragraphs = document.paragraphs
 
-    for issue in issues:
-        idx = issue.paragraph_index
-        message = issue.message
+    # собираем параграфы через iter_inner_content
+    all_paragraphs = []
+    for element in document.iter_inner_content():
+        if isinstance(element, Paragraph):
+            all_paragraphs.append(element)
 
-        if idx is None:
-            # Ошибка уровня документа. Ищем первый абзац с текстом. (для красивого выделения
-            anchor_target = _find_first_non_empty_paragraph(paragraphs)
-            if anchor_target is None:
-                continue  # Документ полностью пустой, клеить некуда
-            message = DOCUMENT_LEVEL_PREFIX + message
+    first_text_paragraph = next((p for p in all_paragraphs if p.text.strip()), None)
+
+    # группировка ошибок по абзацам
+    grouped_issues = {}
+    doc_level_messages = []
+
+    for issue in issues:
+        if issue.paragraph_index is None:
+            doc_level_messages.append(issue.message)
         else:
-            # Ошибка конкретного абзаца
-            try:
-                anchor_target = paragraphs[idx]
-            except (IndexError, TypeError):
-                continue
+            idx = issue.paragraph_index
+            if idx not in grouped_issues:
+                grouped_issues[idx] = []
+            grouped_issues[idx].append(issue.message)
+
+    # добавляем общий комментарий для ошибок уровня документа
+    if doc_level_messages and first_text_paragraph:
+        text = "[Документ]\n- " + "\n- ".join(doc_level_messages)
+        try:
+            add_comment(first_text_paragraph, text, author=COMMENT_AUTHOR)
+        except Exception:
+            pass
+
+    # добавляем комментарии к конкретным абзацам
+    for idx, messages in grouped_issues.items():
+        if idx >= len(all_paragraphs):
+            continue
+            
+        anchor_target = all_paragraphs[idx]
+        
+        # если ошибок несколько - склеиваем их в список через дефис
+        if len(messages) > 1:
+            text = "\n- " + "\n- ".join(messages)
+        else:
+            text = messages[0]
 
         try:
-            add_comment(anchor_target, message, author=COMMENT_AUTHOR)
+            add_comment(anchor_target, text, author=COMMENT_AUTHOR)
         except Exception:
             continue
 

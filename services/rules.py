@@ -199,11 +199,11 @@ _STANDARD_PARAMS = {
             top_level_format=OneOf({"bullet"}),
             second_level_format=OneOf({"bullet"}),
             top_level_marker=Regex(
-                r"[-–—]",
+                r"[-–—\uf0be\uf02d]|%1\)",
                 full_match=True,
             ),
             second_level_marker=Regex(
-                r"[-–—]|[а-я]\)",
+                r"[-–—\uf0be\uf02d]|%1\)",
                 full_match=True,
             ),
             item_ending=OneOf({",", ";", "."}),
@@ -258,7 +258,7 @@ _STANDARD_PARAMS = {
             CloseToOneOf({12.0, 14.0})
         ),
         first_line_indent=OptionalUnwrapConstraint(
-            CloseTo(1.25)
+            CloseTo(1.25, abs_tol=0.05)
         ),
         font_color=OneOf({"000000"}),
 
@@ -305,11 +305,11 @@ _STANDARD_PARAMS = {
                 "bullet",
             }),
             top_level_marker=Regex(
-                r"[-–—]|%1\)",
+                r"[-–—\uf0be\uf02d]|%1\)",
                 full_match=True,
             ),
             second_level_marker=Regex(
-                r"[-–—]|%1\)",
+                r"[-–—\uf0be\uf02d]|%1\)",
                 full_match=True,
             ),
             item_ending=OneOf({",", ";", "."}),
@@ -526,9 +526,13 @@ def check_paragraphs(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
     params = _STANDARD_PARAMS[standard]
 
     for p in parsed.paragraphs:
-        if not p.text.strip():
+        if (
+            not p.text.strip() 
+            or _is_heading(p, params) 
+            or (p.num_id is not None and p.num_id != 0)
+        ):
             continue
-
+        
         if not params.line_spacing.allows(p.line_spacing):
             _add_issue(
                 issues,
@@ -541,7 +545,17 @@ def check_paragraphs(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
                 paragraph_index=p.index_,
             )
 
-        if not params.first_line_indent.allows(p.first_line_indent):
+        is_centered_or_right = p.alignment in ("center", "right")
+        is_caption = (
+            params.illustrations.caption_pattern.allows(p.text.strip())
+            or params.tables.caption_pattern.allows(p.text.strip())
+        )
+
+        if (
+            not is_centered_or_right
+            and not is_caption
+            and not params.first_line_indent.allows(p.first_line_indent)
+        ):
             _add_issue(
                 issues,
                 rule_id="text.first_line_indent",
