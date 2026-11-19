@@ -258,7 +258,7 @@ _STANDARD_PARAMS = {
             CloseToOneOf({12.0, 14.0})
         ),
         first_line_indent=OptionalUnwrapConstraint(
-            CloseTo(1.25)
+            CloseTo(1.25, abs_tol=0.05)
         ),
         font_color=OneOf({"000000"}),
 
@@ -526,7 +526,7 @@ def check_paragraphs(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
     params = _STANDARD_PARAMS[standard]
 
     for p in parsed.paragraphs:
-        if not p.text.strip():
+        if not p.text.strip() or _is_heading(p, params):
             continue
 
         if not params.line_spacing.allows(p.line_spacing):

@@ -86,16 +86,16 @@ def _get_paragraph_info(
             (None, None),
         )
 
+    indent_val = pf.indent_first_line
+    
+    if indent_val is not None and indent_val < 0:
+        indent_val = None
+
     return ParagraphInfo(
         index_=i,
         text=p.text,
         style=pf.style_name,
         alignment=pf.alignment,
-
-        indent_val = pf.indent_first_line
-        
-        if indent_val is not None and indent_val < 0:
-            indent_val = None
 
         # `pf.indent_first_line` is in twips
         # cm = twips * (2.54 / 1440)
@@ -123,8 +123,6 @@ def _get_paragraph_info(
 def _get_run_info(r: Run) -> RunInfo:
     rf = resolve_effective_formatting(r)
 
-    color = rf.color_rgb if rf.color_rgb else "000000"
-
     return RunInfo(
         text=r.text,
         font_name=rf.font_name,
@@ -136,7 +134,11 @@ def _get_run_info(r: Run) -> RunInfo:
             if rf.underline is not None
             else None
         ),
-        color_rgb=color,
+        color_rgb=(
+            rf.color_rgb
+            if rf.color_rgb and rf.color_rgb.lower() != "auto"
+            else "000000"
+        ),
     )
 
 
