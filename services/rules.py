@@ -576,11 +576,13 @@ def check_paragraphs(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
 def check_runs(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
     issues: list[Issue] = []
     params = _STANDARD_PARAMS[standard]
+    seen: set[tuple[int,str]] = set()
 
     for paragraph, run in _iter_runs(parsed):
         i = paragraph.index_
 
-        if not params.font.allows(run.font_name):
+        if not params.font.allows(run.font_name) and (i, "text.font") not in seen:
+            seen.add((i, "text.font"))
             _add_issue(
                 issues,
                 rule_id="text.font",
@@ -592,7 +594,8 @@ def check_runs(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
                 paragraph_index=i,
             )
 
-        if not params.font_size.allows(run.font_size):
+        if not params.font_size.allows(run.font_size) and (i, "text.font_size") not in seen:
+            seen.add((i, "text.font_size"))
             _add_issue(
                 issues,
                 rule_id="text.font_size",
@@ -607,7 +610,8 @@ def check_runs(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
 
         color = _is_black(run.color_rgb)
 
-        if not params.font_color.allows(color):
+        if not params.font_color.allows(color) and (i, "text.font_color") not in seen:
+            seen.add((i, "text.font_color"))
             _add_issue(
                 issues,
                 rule_id="text.font_color",
@@ -824,7 +828,18 @@ def check_illustrations(
             if match is not None:
                 figures.append((p.index_, match.group(1)))
 
-    if params.single_figure_limit.allows(len(figures)):
+    if standard == Standard.MU_PO and parsed.images_count == 1:
+        for p_index, _ in figures:
+            _add_issue(
+                issues,
+                rule_id="illustrations.single_figure",
+                category=IssueCategory.ILLUSTRATIONS,
+                subject="Подпись единственного рисунка",
+                actual="присутствует нумерация / «Рис.»",
+                expected="не нумеруется, без слова «Рис.»",
+                standard=standard,
+                paragraph_index=p_index,
+            )
         return issues
 
     sequential = params.sequential_limit.allows(len(figures))
