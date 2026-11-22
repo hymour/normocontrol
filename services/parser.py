@@ -108,9 +108,7 @@ def _get_paragraph_info(
         runs=[_get_run_info(r) for r in p.runs],
         is_bold=pf.bold,
         is_underline=(
-            bool(pf.underline)
-            if pf.underline is not None
-            else None
+            pf.underline not in (None, False, "none", "None")
         ),
         caps=pf.caps,
         num_id=num_id,
@@ -130,9 +128,7 @@ def _get_run_info(r: Run) -> RunInfo:
         is_bold=rf.bold,
         is_italic=rf.italic,
         is_underline=(
-            bool(rf.underline)
-            if rf.underline is not None
-            else None
+            rf.underline not in (None, False, "none", "None")
         ),
         color_rgb=(
             rf.color_rgb

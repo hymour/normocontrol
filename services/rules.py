@@ -1025,7 +1025,7 @@ def check_tables(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
                     paragraph_index=p_index,
                 )
                 continue
-            
+
             paragraph = parsed.paragraphs[p_index]
             text = paragraph.text.strip()
             
@@ -1107,25 +1107,30 @@ def check_tables(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
             
 
         elif standard == Standard.MU_PO:
-            if p_index < 1:
-                _add_issue(
-                    issues,
-                    rule_id="tables.caption",
-                    category=IssueCategory.TABLES,
-                    subject="Подпись таблицы",
-                    actual="отсутствует",
-                    expected=constraint_to_str(
-                        params.caption_pattern
-                    ),
-                    standard=standard,
-                    paragraph_index=p_index,
-                )
-                continue
+            if params.caption_pattern.allows(parsed.paragraphs[p_index].text.strip()):
+                label_para = parsed.paragraphs[p_index]
+                name_para = None
+            else:
+                if p_index < 1:
+                    _add_issue(
+                        issues,
+                        rule_id="tables.caption",
+                        category=IssueCategory.TABLES,
+                        subject="Подпись таблицы",
+                        actual="отсутствует",
+                        expected=constraint_to_str(
+                            params.caption_pattern
+                        ),
+                        standard=standard,
+                        paragraph_index=p_index,
+                    )
+                    continue
 
-            label_para = parsed.paragraphs[p_index - 1]
+                label_para = parsed.paragraphs[p_index - 1]
+                name_para = parsed.paragraphs[p_index]
+
             label_text = label_para.text.strip()
-            name_para = parsed.paragraphs[p_index]
-            name_text = name_para.text.strip()
+            name_text = name_para.text.strip() if name_para else ""
 
             if not params.caption_pattern.allows(label_text):
                 _add_issue(
@@ -1177,43 +1182,44 @@ def check_tables(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
                     units="см",
                 )
 
-            if not params.name_alignment.allows(name_para.alignment):
-                _add_issue(
-                    issues,
-                    rule_id="tables.name.alignment",
-                    category=IssueCategory.TABLES,
-                    subject="Выравнивание заголовка таблицы",
-                    actual=str(name_para.alignment),
-                    expected=constraint_to_str(params.name_alignment),
-                    standard=standard,
-                    paragraph_index=name_para.index_,
-                )
+            if name_para is not None:
+                if not params.name_alignment.allows(name_para.alignment):
+                    _add_issue(
+                        issues,
+                        rule_id="tables.name.alignment",
+                        category=IssueCategory.TABLES,
+                        subject="Выравнивание заголовка таблицы",
+                        actual=str(name_para.alignment),
+                        expected=constraint_to_str(params.name_alignment),
+                        standard=standard,
+                        paragraph_index=name_para.index_,
+                    )
 
-            if not params.no_underline.allows(
-                _has_underlined_runs(name_para)
-            ):
-                _add_issue(
-                    issues,
-                    rule_id="tables.name.underline",
-                    category=IssueCategory.TABLES,
-                    subject="Подчёркивание заголовка таблицы",
-                    actual="присутствует",
-                    expected="без подчёркивания",
-                    standard=standard,
-                    paragraph_index=name_para.index_,
-                )
+                if not params.no_underline.allows(
+                    _has_underlined_runs(name_para)
+                ):
+                    _add_issue(
+                        issues,
+                        rule_id="tables.name.underline",
+                        category=IssueCategory.TABLES,
+                        subject="Подчёркивание заголовка таблицы",
+                        actual="присутствует",
+                        expected="без подчёркивания",
+                        standard=standard,
+                        paragraph_index=name_para.index_,
+                    )
 
-            if name_text and not name_text[0].isupper():
-                _add_issue(
-                    issues,
-                    rule_id="tables.name.case",
-                    category=IssueCategory.TABLES,
-                    subject="Регистр заголовка таблицы",
-                    actual=name_text,
-                    expected="с прописной буквы",
-                    standard=standard,
-                    paragraph_index=name_para.index_,
-                )
+                if name_text and not name_text[0].isupper():
+                    _add_issue(
+                        issues,
+                        rule_id="tables.name.case",
+                        category=IssueCategory.TABLES,
+                        subject="Регистр заголовка таблицы",
+                        actual=name_text,
+                        expected="с прописной буквы",
+                        standard=standard,
+                        paragraph_index=name_para.index_,
+                    )
 
     sequential = params.sequential_limit.allows(len(parsed.tables))
 
