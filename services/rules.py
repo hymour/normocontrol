@@ -485,6 +485,19 @@ def _has_underlined_runs(paragraph: ParagraphInfo) -> bool:
         if run.text.strip()
     )
 
+def _starts_with_upper(text: str) -> bool:
+    first_letter = next((ch for ch in text if ch.isalpha()), None)
+    return first_letter is not None and first_letter.isupper()
+
+
+def _prev_non_empty_index(paragraphs: list[ParagraphInfo], start_idx: int | None) -> int | None:
+    idx = start_idx
+    while idx is not None and idx >= 0:
+        if paragraphs[idx].text.strip():
+            return idx
+        idx -= 1
+    return None
+
 
 # --- функции проверки
 # --- оформления документа
@@ -997,36 +1010,36 @@ def check_tables(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
             )
             continue
 
-        paragraph = parsed.paragraphs[p_index]
-        text = paragraph.text.strip()
-
-        if not params.caption_pattern.allows(text):
-            _add_issue(
-                issues,
-                rule_id="tables.caption",
-                category=IssueCategory.TABLES,
-                subject="Подпись таблицы",
-                actual=text or "отсутствует",
-                expected=constraint_to_str(
-                    params.caption_pattern
-                ),
-                standard=standard,
-                paragraph_index=p_index,
-            )
-            continue
-
-        match = re.search(
-            r"Таблица\s+(\d+(?:\.\d+)*)",
-            text,
-        )
-
-        if match is None:
-            continue
-
-        number = match.group(1)
-        table_numbers.append((p_index, number))
-
         if standard == Standard.GOST_7_32:
+            if not params.caption_pattern.allows(text):
+                _add_issue(
+                    issues,
+                    rule_id="tables.caption",
+                    category=IssueCategory.TABLES,
+                    subject="Подпись таблицы",
+                    actual=text or "отсутствует",
+                    expected=constraint_to_str(
+                        params.caption_pattern
+                    ),
+                    standard=standard,
+                    paragraph_index=p_index,
+                )
+                continue
+            
+            paragraph = parsed.paragraphs[p_index]
+            text = paragraph.text.strip()
+            
+            match = re.search(
+                r"Таблица\s+(\d+(?:\.\d+)*)",
+                text,
+            )
+            
+            if match is None:
+                continue
+
+            number = match.group(1)
+            table_numbers.append((p_index, number))
+
             if not params.alignment.allows(paragraph.alignment):
                 _add_issue(
                     issues,
@@ -1080,32 +1093,126 @@ def check_tables(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
                     paragraph_index=p_index,
                 )
 
+            if name and not name[0].isupper():
+                _add_issue(
+                    issues,
+                    rule_id="tables.name.case",
+                    category=IssueCategory.TABLES,
+                    subject="Регистр наименования таблицы",
+                    actual=name,
+                    expected="с прописной буквы",
+                    standard=standard,
+                    paragraph_index=p_index,
+                )
+            
+
         elif standard == Standard.MU_PO:
-            if not params.alignment.allows(paragraph.alignment):
+            if p_index < 1:
+                _add_issue(
+                    issues,
+                    rule_id="tables.caption",
+                    category=IssueCategory.TABLES,
+                    subject="Подпись таблицы",
+                    actual="отсутствует",
+                    expected=constraint_to_str(
+                        params.caption_pattern
+                    ),
+                    standard=standard,
+                    paragraph_index=p_index,
+                )
+                continue
+
+            label_para = parsed.paragraphs[p_index - 1]
+            label_text = label_para.text.strip()
+            name_para = parsed.paragraphs[p_index]
+            name_text = name_para.text.strip()
+
+            if not params.caption_pattern.allows(label_text):
+                _add_issue(
+                    issues,
+                    rule_id="tables.caption",
+                    category=IssueCategory.TABLES,
+                    subject="Надпись «Таблица»",
+                    actual=label_text or "отсутствует",
+                    expected=constraint_to_str(
+                        params.caption_pattern
+                    ),
+                    standard=standard,
+                    paragraph_index=label_para.index_,
+                )
+                continue
+
+            match = re.search(
+                r"Таблица\s+(\d+(?:\.\d+)*)",
+                label_text,
+            )
+
+            if match is not None:
+                table_numbers.append((label_para.index_, match.group(1)))
+
+            if not params.alignment.allows(label_para.alignment):
                 _add_issue(
                     issues,
                     rule_id="tables.alignment",
                     category=IssueCategory.TABLES,
                     subject="Положение надписи «Таблица»",
-                    actual=str(paragraph.alignment),
+                    actual=str(label_para.alignment),
                     expected=constraint_to_str(params.alignment),
                     standard=standard,
-                    paragraph_index=p_index,
+                    paragraph_index=label_para.index_,
                 )
 
             if not params.zero_indent.allows(
-                paragraph.first_line_indent
+                label_para.first_line_indent
             ):
                 _add_issue(
                     issues,
                     rule_id="tables.indent",
                     category=IssueCategory.TABLES,
                     subject="Абзацный отступ надписи таблицы",
-                    actual=str(paragraph.first_line_indent),
+                    actual=str(label_para.first_line_indent),
                     expected=constraint_to_str(params.zero_indent),
                     standard=standard,
-                    paragraph_index=p_index,
+                    paragraph_index=label_para.index_,
                     units="см",
+                )
+
+            if not params.name_alignment.allows(name_para.alignment):
+                _add_issue(
+                    issues,
+                    rule_id="tables.name.alignment",
+                    category=IssueCategory.TABLES,
+                    subject="Выравнивание заголовка таблицы",
+                    actual=str(name_para.alignment),
+                    expected=constraint_to_str(params.name_alignment),
+                    standard=standard,
+                    paragraph_index=name_para.index_,
+                )
+
+            if not params.no_underline.allows(
+                _has_underlined_runs(name_para)
+            ):
+                _add_issue(
+                    issues,
+                    rule_id="tables.name.underline",
+                    category=IssueCategory.TABLES,
+                    subject="Подчёркивание заголовка таблицы",
+                    actual="присутствует",
+                    expected="без подчёркивания",
+                    standard=standard,
+                    paragraph_index=name_para.index_,
+                )
+
+            if name_text and not name_text[0].isupper():
+                _add_issue(
+                    issues,
+                    rule_id="tables.name.case",
+                    category=IssueCategory.TABLES,
+                    subject="Регистр заголовка таблицы",
+                    actual=name_text,
+                    expected="с прописной буквы",
+                    standard=standard,
+                    paragraph_index=name_para.index_,
                 )
 
     sequential = params.sequential_limit.allows(len(parsed.tables))
