@@ -349,6 +349,18 @@ _STANDARD_PARAMS = {
     ),
 }
 
+_ACTUAL_LABELS = {
+    "None": "не задано",
+    "left": "по левому краю",
+    "right": "по правому краю",
+    "center": "по центру",
+    "justify": "по ширине",
+    "decimal": "нумерованный список",
+    "bullet": "маркированный список",
+    "lowerLetter": "буквенный список",
+    "lowerletter": "буквенный список",
+    "000000": "чёрный",
+}
 
 def format_issue_message(
     subject: str,
@@ -356,11 +368,12 @@ def format_issue_message(
     expected: str,
     units: str | None = None,
 ) -> str:
+    clean_actual = _ACTUAL_LABELS.get(actual, actual)
     if units:
-        return f"{subject} — {actual} {units}, ожидается {expected} {units}"
+        return f"{subject} — {clean_actual} {units}, ожидается {expected} {units}"
 
     # `units` is None or empty string
-    return f"{subject} — {actual}, ожидается {expected}"
+    return f"{subject} — {clean_actual}, ожидается {expected}"
 
 
 def _add_issue(
@@ -484,19 +497,6 @@ def _has_underlined_runs(paragraph: ParagraphInfo) -> bool:
         for run in paragraph.runs
         if run.text.strip()
     )
-
-def _starts_with_upper(text: str) -> bool:
-    first_letter = next((ch for ch in text if ch.isalpha()), None)
-    return first_letter is not None and first_letter.isupper()
-
-
-def _prev_non_empty_index(paragraphs: list[ParagraphInfo], start_idx: int | None) -> int | None:
-    idx = start_idx
-    while idx is not None and idx >= 0:
-        if paragraphs[idx].text.strip():
-            return idx
-        idx -= 1
-    return None
 
 
 # --- функции проверки
@@ -1011,6 +1011,9 @@ def check_tables(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
             continue
 
         if standard == Standard.GOST_7_32:
+            paragraph = parsed.paragraphs[p_index]
+            text = paragraph.text.strip()
+
             if not params.caption_pattern.allows(text):
                 _add_issue(
                     issues,
@@ -1025,9 +1028,6 @@ def check_tables(parsed: DocumentInfo, standard: Standard) -> list[Issue]:
                     paragraph_index=p_index,
                 )
                 continue
-
-            paragraph = parsed.paragraphs[p_index]
-            text = paragraph.text.strip()
             
             match = re.search(
                 r"Таблица\s+(\d+(?:\.\d+)*)",

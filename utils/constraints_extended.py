@@ -115,6 +115,42 @@ class TextCase[T: str]:
                 ]
                 return bool(words) and words[0][0].isupper()
 
+_VALUE_LABELS = {
+    "left": "по левому краю",
+    "right": "по правому краю",
+    "center": "по центру",
+    "justify": "по ширине",
+    "bullet": "маркированный список",
+    "decimal": "нумерованный список",
+    "lowerLetter": "буквенный список (а, б, в...)",
+    "lowerletter": "буквенный список (а, б, в...)",
+    "000000": "чёрный",
+    True: "присутствует",
+    False: "отсутствует",
+}   
+
+_REGEX_LABELS = {
+    # Заголовки
+    r"^\s*\d+(?:\.\d+)*\.?\s+\S+": "номер и название заголовка (например, 1 Введение)",
+    r"[^.]$": "без точки в конце",
+    r"^[^\r\n]*$": "в одну строку без разрывов",
+
+    # Рисунки и таблицы
+    r"^\s*(?:Рисунок|Рис\.)\s+\d+(?:\.\d+)*": "Рисунок 1 — Название рисунка",
+    r"^\s*Таблица\s+\d+(?:\.\d+)?\s*[—–-]\s*\S.*$": "Таблица 1 — Название таблицы",
+    r"^\s*Таблица\s+\d+(?:\.\d+)?\s*$": "Таблица 1",
+    r"^\d+(?:\.\d+)?$": "число или номер через точку (например, 1 или 1.2)",
+    r"^\S.*$": "непустой текст без пробела в начале",
+
+    # Списки
+    r"[-–—\uf0be\uf02d]|%1\)": "дефис или тире (–)",
+
+    # Ссылки
+    r"\[[^\]]*\]": "ссылка в квадратных скобках",
+    r"\[\d+\]": "номер источника в квадратных скобках (например, [1])",
+    r"/[^/\s]*/": "ссылка в косых чертах",
+    r"/\d+/": "номер источника в косых чертах (например, /1/)",
+}
 
 def constraint_to_str(constraint: Constraint[Any]) -> str:
     match constraint:
@@ -122,9 +158,14 @@ def constraint_to_str(constraint: Constraint[Any]) -> str:
             return "любое значение"
 
         case OneOf(values) | CloseToOneOf(values):
+            formatted = list(dict.fromkeys(
+                _VALUE_LABELS.get(v, repr(v)) for v in values
+            ))
+            if len(formatted) == 1:
+                return formatted[0]
             return (
                 f"одно из значений: "
-                f"{', '.join(sorted(map(repr, values)))}"
+                f"{', '.join(sorted(formatted))}"
             )
 
         case Range(minimum, maximum, include_minimum, include_maximum):
@@ -156,17 +197,8 @@ def constraint_to_str(constraint: Constraint[Any]) -> str:
         case OptionalUnwrapConstraint(inner):
             return constraint_to_str(inner)
 
-        case Regex(pattern, full_match, _):
-            if full_match:
-                return (
-                    "текст полностью соответствует "
-                    f"регулярному выражению {pattern!r}"
-                )
-
-            return (
-                "текст содержит соответствие "
-                f"регулярному выражению {pattern!r}"
-            )
+        case Regex(pattern, _, _):
+            return _REGEX_LABELS.get(pattern, "соответствие формату стандарта")
 
         case TextCase(mode):
             return mode
